@@ -1,18 +1,9 @@
-import 'dart:io';
-
-import 'package:admin_app/data/ProductDataModel.dart';
+import 'package:admin_app/data/data_models/ProductDataModel.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:image_picker/image_picker.dart';
 
 class ProductsDataSource {
-  static bool isLoading = true;
-  static bool isError = false;
-  static String errorMessage = '';
-
-  static final List<ProductDataModel> items = [];
-
   ///old method to get data from the API
-  // static Future<bool> getProducts() async {
+  //  Future<bool> getProducts() async {
   //   try {
   //     print('getProducts called');
   //
@@ -55,7 +46,7 @@ class ProductsDataSource {
   //   }
   // }
 
-  static Future<bool> getProducts() async {
+  Future<List<ProductDataModel>?> getProducts() async {
     try {
       QuerySnapshot<Map<String, dynamic>> collection =
           await FirebaseFirestore.instance.collection('products').get();
@@ -63,6 +54,8 @@ class ProductsDataSource {
       final List<Map<String, dynamic>> productsList = collection.docs.map((e) {
         return e.data();
       }).toList();
+
+      List<ProductDataModel> items = [];
 
       for (Map<String, dynamic> item in productsList) {
         ///first: create a new instance of ProductDataModel
@@ -74,59 +67,14 @@ class ProductsDataSource {
         items.add(product);
       }
 
-      ///third: update the UI
-      isLoading = false;
-      return true;
+      return items;
     } catch (e) {
       /// if status code is not 200, or any other error occurred
       /// the thrown exception will be caught here
       /// and implement the error handling logic
       print(e);
-      isLoading = false;
-      isError = true;
-      errorMessage = e.toString();
-      return false;
-    }
-  }
-}
 
-class AddProductsDataSource {
-  static bool isLoading = false;
-  static bool isError = false;
-  static String errorMessage = '';
-
-  static File? image;
-
-  static Future<void> pickImageFromGallery() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? img = await picker.pickImage(source: ImageSource.gallery);
-    if (img != null) {
-      image = File(img.path);
-    }
-  }
-
-  static Future<bool> addProduct({
-    required String title,
-    required String description,
-    required double price,
-  }) async {
-    try {
-      isLoading = true;
-      await FirebaseFirestore.instance.collection('products').add({
-        'title': title,
-        'description': description,
-        'price': price,
-        'thumbnail':
-            'https://cdn.dummyjson.com/products/images/beauty/Eyeshadow%20Palette%20with%20Mirror/thumbnail.png',
-      });
-      isLoading = false;
-      return true;
-    } catch (e) {
-      isLoading = false;
-      isError = true;
-      errorMessage = e.toString();
-      print(e);
-      return false;
+      return null;
     }
   }
 }

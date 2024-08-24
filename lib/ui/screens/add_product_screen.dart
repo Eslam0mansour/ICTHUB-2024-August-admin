@@ -1,5 +1,5 @@
-import 'package:admin_app/data/products_data_source.dart';
-import 'package:admin_app/widgets/custom_text_form_field.dart';
+import 'package:admin_app/data/data_source/add_product_data_source.dart';
+import 'package:admin_app/ui/widgets/custom_text_form_field.dart';
 import 'package:flutter/material.dart';
 
 class AddProductScreen extends StatefulWidget {
@@ -73,22 +73,57 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 validator: (value) {
                   if (value!.isEmpty) {
                     return 'Price is required';
+                  } else if (int.tryParse(value) == null) {
+                    return 'Price must be a number';
                   }
                   return null;
                 },
                 keyboardType: TextInputType.number,
               ),
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   if (_formKey.currentState!.validate()) {
-                    setState(() {});
-                    AddProductsDataSource.addProduct(
-                      title: _titleController.text,
-                      description: _descriptionController.text,
-                      price: double.parse(_priceController.text),
-                    ).then((value) {
+                    if (AddProductsDataSource.image != null) {
                       setState(() {});
-                    });
+                      AddProductsDataSource.addProduct(
+                        title: _titleController.text,
+                        description: _descriptionController.text,
+                        price: double.parse(_priceController.text),
+                      ).then((value) {
+                        if (value) {
+                          setState(() {
+                            AddProductsDataSource.image = null;
+                            _titleController.clear();
+                            _descriptionController.clear();
+                            _priceController.clear();
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              backgroundColor: Colors.green,
+                              content: Text('Product added successfully'),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: Colors.red,
+                              content: Text(AddProductsDataSource.errorMessage),
+                            ),
+                          );
+                        }
+                      });
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          backgroundColor: Colors.red,
+                          content: Text('Please pick an image'),
+                        ),
+                      );
+                      await Future.delayed(const Duration(seconds: 1), () {});
+
+                      await AddProductsDataSource.pickImageFromGallery();
+                      setState(() {});
+                    }
                   }
                 },
                 child: AddProductsDataSource.isLoading
